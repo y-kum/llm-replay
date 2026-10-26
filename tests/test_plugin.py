@@ -1,6 +1,10 @@
 """The pytest plugin, run inside a throwaway project with pytester."""
 
 import json
+import shutil
+import sys
+
+import pytest
 
 TEST_FILE = """
 import httpx, openai, pytest
@@ -34,7 +38,16 @@ def test_named_tape(llm_session):
 """
 
 
-def _write(pytester, question="q1"):
+@pytest.fixture(autouse=True)
+def _no_bytecode(monkeypatch):
+    # The test file is rewritten between in-process runs. Same-size rewrites within one second can make Python
+    # reuse a stale .pyc (fast CI runners hit this), so never write or read cached bytecode here.
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+
+
+def _write(pytester, question="first question"):
+    for cache in pytester.path.rglob("__pycache__"):
+        shutil.rmtree(cache, ignore_errors=True)
     pytester.makepyfile(test_app=TEST_FILE.replace("{QUESTION}", question))
 
 
@@ -52,7 +65,7 @@ def test_record_then_replay_then_drift(pytester):
     report = json.loads((pytester.path / ".llm-replay" / "report.json").read_text())
     assert report["ok"] is True and report["hits"] == 2
 
-    _write(pytester, question="q2")  # the prompt changes: replay must fail and say how
+    _write(pytester, question="a reworded, longer second question")  # the prompt changes: replay must fail and say how
     drift = pytester.runpytest("-p", "no:cacheprovider", "-p", "no:asyncio")
     drift.assert_outcomes(passed=1, failed=1)
     drift.stdout.fnmatch_lines(["*ReplayMiss*", "*similar*"])
