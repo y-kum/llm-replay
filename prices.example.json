@@ -1,0 +1,6 @@
+{
+  "_note": "Your own price table, USD per 1M tokens. Check your provider's pricing page; these are placeholders.",
+  "gpt-4o-mini": {"input": 0.15, "output": 0.6},
+  "gemini-2.5-flash": {"input": 0.3, "output": 2.5},
+  "claude-haiku-5-5": {"input": 0.1, "output": 0.5}
+}
