@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-30)
 - Record / replay / auto / off modes; JSONL tapes with redaction of credentials.
 - Adapters for OpenAI (chat completions, responses), Anthropic (messages) and Google Gen AI (generate_content,
   generate_content_stream); sync, async and streaming.
