@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pytest-llm-replay"
-version = "0.1.1"
+version = "0.1.2"
 description = "Record LLM calls once, replay them in tests and CI: deterministic, free, with prompt-drift and cost reports."
 readme = "README.md"
 requires-python = ">=3.10"
