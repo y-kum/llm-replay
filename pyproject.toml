@@ -3,8 +3,8 @@ requires = ["hatchling>=1.24"]
 build-backend = "hatchling.build"
 
 [project]
-name = "llm-replay"
-version = "0.1.0"
+name = "pytest-llm-replay"
+version = "0.1.1"
 description = "Record LLM calls once, replay them in tests and CI: deterministic, free, with prompt-drift and cost reports."
 readme = "README.md"
 requires-python = ">=3.10"

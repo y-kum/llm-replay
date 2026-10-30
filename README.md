@@ -4,8 +4,11 @@ Record your LLM calls once. Replay them in tests and CI: deterministic, free, of
 see exactly what changed instead of a mystery failure.
 
 ```bash
-pip install llm-replay
+pip install pytest-llm-replay
 ```
+
+The import and the command stay `llm_replay` and `llm-replay`. Only the PyPI name differs, because PyPI treats
+`llm-replay` as too close to the existing `llmreplay` project.
 
 Works with the official **OpenAI** (and OpenAI-compatible: Groq, Together, vLLM, Ollama), **Anthropic** and
 **Google Gen AI** (Gemini, Vertex AI) Python SDKs, sync and async, streaming included. Nothing to change in your

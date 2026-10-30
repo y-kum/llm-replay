@@ -1,6 +1,6 @@
 # Publishes to PyPI when a version tag (v*) is pushed. Uses PyPI trusted publishing: no API token is stored.
 # One-time setup on pypi.org: Account -> Publishing -> add a pending publisher for
-#   owner y-kum, repository llm-replay, workflow release.yml, environment pypi.
+#   project pytest-llm-replay, owner y-kum, repository llm-replay, workflow release.yml, environment pypi.
 name: release
 on:
   push:
