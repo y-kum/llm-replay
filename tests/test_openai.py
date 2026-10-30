@@ -1,5 +1,6 @@
 import json
 
+import httpx
 import pytest
 from conftest import FAKE_OPENAI_KEY
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -139,3 +140,25 @@ async def test_async_and_async_stream(tmp_path, async_openai_client, openai_serv
         replayed = "".join([c.choices[0].delta.content or "" async for c in stream2 if c.choices])
     assert r2.choices[0].message.content == r.choices[0].message.content
     assert replayed == live == "echo:y"
+
+
+def test_replays_responses_from_compatible_providers(tmp_path, openai_client, openai_server):
+    """Groq and others send values outside OpenAI's strict schema; live calls accept them, so replay must too."""
+    real = openai_server.respond
+
+    def groq_like(body, n):
+        r = real(body, n)
+        data = r.json()
+        data.update(service_tier="on_demand", x_groq={"id": "req_1"})
+        return httpx.Response(200, json=data)
+
+    openai_server.respond = groq_like
+    tape = tmp_path / "t.jsonl"
+    with llm_replay.session(tape, mode="record"):
+        live = ask(openai_client, "hello")
+    assert live.service_tier == "on_demand"
+    openai_server.down()
+    with llm_replay.session(tape, mode="replay"):
+        again = ask(openai_client, "hello")
+    assert again.choices[0].message.content == "echo:hello"
+    assert again.usage.prompt_tokens == 11 and again.service_tier == "on_demand"

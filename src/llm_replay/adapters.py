@@ -16,6 +16,8 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
+from pydantic import ValidationError
+
 from ._normalize import normalize_request
 from .session import CallSpec, Mode, current
 
@@ -71,6 +73,29 @@ def _wrap(orig: Callable[..., Any], spec: CallSpec, is_stream: Callable[[dict[st
     return wrapper
 
 
+def _lenient(model: Any) -> Callable[[Any], Any]:
+    """Rebuild a response like the SDK does: compatible providers send values outside the strict schema
+    (Groq's service_tier="on_demand"), which live calls accept and replay must accept too."""
+
+    def load(data: Any) -> Any:
+        try:
+            return model.model_validate(data)
+        except ValidationError:
+            return model.construct(**data)
+
+    return load
+
+
+def _lenient_event(adapter: Any, event_type: Any, construct_type: Callable[..., Any]) -> Callable[[Any], Any]:
+    def load(data: Any) -> Any:
+        try:
+            return adapter.validate_python(data)
+        except ValidationError:
+            return construct_type(type_=event_type, value=data)
+
+    return load
+
+
 def _stream_flag(kwargs: dict[str, Any]) -> bool:
     return bool(kwargs.get("stream"))
 
@@ -86,6 +111,7 @@ def _never(_: dict[str, Any]) -> bool:
 # -- OpenAI ------------------------------------------------------------------------------------------------------------
 def _openai_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
     try:
+        from openai._models import construct_type as openai_construct
         from openai.resources.chat.completions import AsyncCompletions, Completions
         from openai.types.chat import ChatCompletion, ChatCompletionChunk
         from pydantic import TypeAdapter
@@ -98,8 +124,8 @@ def _openai_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
 
     chat = CallSpec(
         provider="openai.chat",
-        load=ChatCompletion.model_validate,
-        load_chunk=ChatCompletionChunk.model_validate,
+        load=_lenient(ChatCompletion),
+        load_chunk=_lenient(ChatCompletionChunk),
         usage=chat_usage,
     )
     targets = [
@@ -118,8 +144,8 @@ def _openai_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
 
         responses = CallSpec(
             provider="openai.responses",
-            load=Response.model_validate,
-            load_chunk=event.validate_python,
+            load=_lenient(Response),
+            load_chunk=_lenient_event(event, ResponseStreamEvent, openai_construct),
             usage=resp_usage,
         )
         targets += [
@@ -134,6 +160,7 @@ def _openai_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
 # -- Anthropic ---------------------------------------------------------------------------------------------------------
 def _anthropic_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
     try:
+        from anthropic._models import construct_type as anthropic_construct
         from anthropic.resources.messages import AsyncMessages, Messages
         from anthropic.types import Message, RawMessageStreamEvent
         from pydantic import TypeAdapter
@@ -146,7 +173,10 @@ def _anthropic_targets() -> list[tuple[type, str, Callable[[Any], Any]]]:
         return {"input": u.get("input_tokens") or 0, "output": u.get("output_tokens") or 0}
 
     spec = CallSpec(
-        provider="anthropic.messages", load=Message.model_validate, load_chunk=event.validate_python, usage=usage
+        provider="anthropic.messages",
+        load=_lenient(Message),
+        load_chunk=_lenient_event(event, RawMessageStreamEvent, anthropic_construct),
+        usage=usage,
     )
     return [
         (Messages, "create", lambda o: _wrap(o, spec, _stream_flag, False)),

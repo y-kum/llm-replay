@@ -6,4 +6,5 @@
   generate_content_stream); sync, async and streaming.
 - Prompt-drift report on a replay miss (closest recording on the same route, with a request diff).
 - `@replayable` decorator for any function.
+- Responses from OpenAI-compatible providers replay even when they carry values outside the strict schema.
 - pytest plugin (`@pytest.mark.llm_replay`, `--llm-mode`, run report) and CLI (`stats`, `diff`, `check`).
