@@ -3,6 +3,8 @@
 Record your LLM calls once. Replay them in tests and CI: deterministic, free, offline. When a prompt changes,
 see exactly what changed instead of a mystery failure.
 
+![A shopping assistant's tests: record the model's answers once, replay them on every run, and catch a prompt edit with a diff](https://raw.githubusercontent.com/y-kum/llm-replay/main/docs/demo.gif)
+
 ```bash
 pip install pytest-llm-replay
 ```
