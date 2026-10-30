@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.3 (2026-10-30)
+- Fix: `session()` crashed with `No module named 'pydantic'` on a bare install with no LLM SDK.
+
 ## 0.1.2 (2026-10-30)
 - First release on PyPI. 0.1.0 and 0.1.1 were tagged but never published.
 

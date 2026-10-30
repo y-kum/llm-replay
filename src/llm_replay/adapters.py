@@ -16,8 +16,6 @@ import threading
 from collections.abc import Callable
 from typing import Any
 
-from pydantic import ValidationError
-
 from ._normalize import normalize_request
 from .session import CallSpec, Mode, current
 
@@ -76,6 +74,7 @@ def _wrap(orig: Callable[..., Any], spec: CallSpec, is_stream: Callable[[dict[st
 def _lenient(model: Any) -> Callable[[Any], Any]:
     """Rebuild a response like the SDK does: compatible providers send values outside the strict schema
     (Groq's service_tier="on_demand"), which live calls accept and replay must accept too."""
+    from pydantic import ValidationError  # comes with the SDK; the package itself has no dependencies
 
     def load(data: Any) -> Any:
         try:
@@ -87,6 +86,8 @@ def _lenient(model: Any) -> Callable[[Any], Any]:
 
 
 def _lenient_event(adapter: Any, event_type: Any, construct_type: Callable[..., Any]) -> Callable[[Any], Any]:
+    from pydantic import ValidationError
+
     def load(data: Any) -> Any:
         try:
             return adapter.validate_python(data)
